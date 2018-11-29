@@ -75,7 +75,7 @@ bSmallStep (Ig e1 e2, s) = let (ef,_) = bSmallStep (e1,s)
 bSmallStep (Or TRUE b2,s)  = (TRUE,s)
 bSmallStep (Or FALSE b2,s) = (b2,s)
 bSmallStep (Or b1 b2,s)    = let (bn,_) = bSmallStep (b1,s)
-                              in (Or bn b2,sn)
+                              in (Or bn b2,s)
 							  
 interpretB :: (BExp,Estado) -> (BExp,Estado)
 interpretB (b,s) = if isFinalB b then (b,s) else interpretB (bSmallStep (b,s))
@@ -88,12 +88,24 @@ isFinalB x = False
 
 
 
--- cSmallStep :: (CExp,Estado) -> (CExp,Estado)
+cSmallStep :: (CExp,Estado) -> (CExp,Estado)
 
---cSmallStep (If b c1 c2,s) = 
---cSmallStep (Seq c1 c2,s)  = 
---cSmallStep (Atrib (Var x) e,s) = 
+-- cSmallStep (If c1 c2, s) =
+cSmallStep (If TRUE c1 c2, s) = cSmallStep c1
+cSmallStep (If FALSE c1 c2, s) = cSmallStep c2
+cSmallStep (If b c1 c2,s) = let (bn, _) = bSmallStep (b, s)
+                            in (If bn c1 c2, s)
 
+-- cSmallStep (Seq c1 c2, s) =
+cSmallStep (Seq Skip c2) = cSmallStep c2
+cSmallStep (Seq c1 c2,s)  = let (cn, sn) = cSmallStep (c1, s)
+                            in (Seq cn c2, sn)
+
+--cSmallStep (Atrib (Var x) e,s) =
+cSmallStep (Atrib (Var x) n, s) = let (_, sn) =
+
+cSmallStep (Atrib (Var x) e, s) = let (en, _) = aSmallStep (e, s)
+                                  in (Atrib (Var x) en, s)
 
 -- interpretC :: (CExp,Estado) -> (CExp,Estado)
 -- interpretC (c,s) = ?
