@@ -130,7 +130,7 @@ cSmallStep (Atrib (Var x) e, s) = let (en, _) = aSmallStep (e, s)
 
 -- WHILE
 -- cSmallStep (While b c, s)
-cSmallStep (While b c, s) = (If b (Seq c (While b c)) Skip, s)
+cSmallStep (While b c, s) = (If b (Seq c ( While b c ) ) Skip, s)
 
 -- REPEAT UNTIL
 -- cSmallStep (Repeat c b, s)
@@ -138,13 +138,14 @@ cSmallStep (Repeat c b, s) = (Seq c (If b Skip (Repeat c b)), s)
 
 -- FOR
 -- cSmallStep (For x e1 e2 c, s)
-cSmallStep (For x e1 e2 c, s) = (Seq (Atrib x e1) ( If (MIg e1 e2) (Seq c (For x (Som e1 (Num 1)) e2 c) ) Skip ), s)
+cSmallStep (For (Var x) e1 e2 c, s) = (Seq (Atrib (Var x) e1) ( If (MIg e1 e2) (Seq c (For (Var x) (Som e1 (Num 1)) e2 c) ) Skip ), s)
 
 -- DUPLA ATRIBUICAO
 -- cSmallStep (Atrib2 (Var x1) (Var x2) e1 e2, s)
 cSmallStep (Atrib2 (Var x1) (Var x2) e1 e2, s) = (Seq (Atrib (Var x1) e1) (Atrib (Var x2) e2), s)
 
 
+-- INTERPRETADOR COMANDOS
 -- interpretC :: (CExp,Estado) -> (CExp,Estado)
 -- interpretC (c,s) = ?
 interpretC :: (CExp, Estado) -> (CExp, Estado) 
@@ -172,10 +173,12 @@ exemplo2 = And (And TRUE (Not FALSE)) (And (Not (Not TRUE)) TRUE)
 -- *Main> interpretB (exemplo2,meuEstado)
 -- (TRUE,[("x",3),("y",0),("z",0)])
 
--- EXEMPLO ADICIONADO
+-- EXEMPLOS ADICIONADOS
 exemplo3 :: CExp
 exemplo3 = If ( Ig (Som (Num 1) (Num 2)) (Num 3) )  ( Atrib (Var "x") (Num 4) ) Skip
 
 exemplo4 :: CExp
 exemplo4 = While  (Ig (Var "x") (Num 3))  (Atrib (Var "x") (Num 1))
 
+exemplo5 :: CExp
+exemplo5 = For (Var "x") (Num 0) (Num 10) (Atrib (Var "y") (Som (Var "y") (Num 1) ) ) 
