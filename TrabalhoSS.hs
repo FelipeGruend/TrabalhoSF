@@ -20,6 +20,7 @@ data CExp =    While BExp CExp
      | If BExp CExp CExp
      | Seq CExp CExp
      | Atrib AExp AExp
+     | Atrib2 AExp AExp AExp AExp
      | Skip
    deriving(Show)                
 
@@ -66,11 +67,15 @@ bSmallStep (And b1 b2,s)    = let (bn,sn) = bSmallStep (b1,s)
                               in (And bn b2,sn)
 
 --bSmallStep (Ig e1 e2,s )  = 
-bSmallStep (Ig (Num x1) (Num x2), s) = ((x1==x2), s)
-bSmallStep (Ig (Num x1) e2, s) = let (ef,_) = bSmallStep (e2,s)
-                                 in (Ig (Num x1) ef, s)
-bSmallStep (Ig e1 e2, s) = let (ef,_) = bSmallStep (e1,s)
-                                 in (Ig ef e2, s)
+bSmallStep (Ig (Num n1) (Num n2), s)
+  | ( n1 == n2 ) = (TRUE, s)
+  | otherwise    = (FALSE, s)
+
+bSmallStep (Ig (Num n1) e2, s) = let (en, _) = aSmallStep (e2,s)
+                                 in (Ig (Num n1) en, s)
+bSmallStep (Ig e1 e2, s) = let (en,_) = aSmallStep (e1,s)
+                                 in (Ig en e2, s)
+                                    
 --bSmallStep (Or b1 b2,s )  =
 bSmallStep (Or TRUE b2,s)  = (TRUE,s)
 bSmallStep (Or FALSE b2,s) = (b2,s)
@@ -86,32 +91,43 @@ isFinalB FALSE = True
 isFinalB x = False
 
 
-
-
 cSmallStep :: (CExp,Estado) -> (CExp,Estado)
 
 -- cSmallStep (If c1 c2, s) =
-cSmallStep (If TRUE c1 c2, s) = cSmallStep c1
-cSmallStep (If FALSE c1 c2, s) = cSmallStep c2
+cSmallStep (If TRUE c1 c2, s) = cSmallStep (c1, s)
+cSmallStep (If FALSE c1 c2, s) = cSmallStep (c2, s)
 cSmallStep (If b c1 c2,s) = let (bn, _) = bSmallStep (b, s)
                             in (If bn c1 c2, s)
 
 -- cSmallStep (Seq c1 c2, s) =
-cSmallStep (Seq Skip c2) = cSmallStep c2
+cSmallStep (Seq Skip c2, s) = cSmallStep (c2, s)
 cSmallStep (Seq c1 c2,s)  = let (cn, sn) = cSmallStep (c1, s)
                             in (Seq cn c2, sn)
 
 --cSmallStep (Atrib (Var x) e,s) =
-cSmallStep (Atrib (Var x) n, s) = let (_, sn) =
+cSmallStep (Atrib (Var x) (Num n), s) = (Skip, mudaVar s x n)
 
 cSmallStep (Atrib (Var x) e, s) = let (en, _) = aSmallStep (e, s)
                                   in (Atrib (Var x) en, s)
 
+-- cSmallStep (While b c, s)
+cSmallStep (While b c, s) = (If b (Seq (c While b c ) )  )
+
+
+-- DUPLA ATRIBUICAO
+-- cSmallStep (Atrib2 (Var x1) (Var x2) e1 e2, s)
+cSmallStep (Atrib2 (Var x1) (Var x2) e1 e2, s) = (Seq (Atrib x1 e1) (Atrib x2 e2), s)
+
+
 -- interpretC :: (CExp,Estado) -> (CExp,Estado)
 -- interpretC (c,s) = ?
+interpretC :: (CExp, Estado) -> (CExp, Estado) 
+interpretC (c,s) = if isFinalC c then (c,s) else interpretC (cSmallStep (c,s))
 
 -- isFinalC :: CExp -> Bool
-
+isFinalC :: CExp -> Bool
+isFinalC Skip = True
+isFinalC x = False
 
 
 meuEstado :: Estado
