@@ -14,9 +14,12 @@ data BExp = TRUE
      | And BExp BExp
      | Or  BExp BExp
      | Ig  AExp AExp
+     | MIg AExp AExp -- Menor ou igual
    deriving(Show)
 
 data CExp =    While BExp CExp
+     | Repeat CExp BExp
+     | For AExp AExp AExp CExp
      | If BExp CExp CExp
      | Seq CExp CExp
      | Atrib AExp AExp
@@ -65,7 +68,7 @@ bSmallStep (And TRUE b2,s)  = (b2,s)
 bSmallStep (And FALSE b2,s) = (FALSE,s)
 bSmallStep (And b1 b2,s)    = let (bn,sn) = bSmallStep (b1,s)
                               in (And bn b2,sn)
-
+-- IG
 --bSmallStep (Ig e1 e2,s )  = 
 bSmallStep (Ig (Num n1) (Num n2), s)
   | ( n1 == n2 ) = (TRUE, s)
@@ -75,7 +78,20 @@ bSmallStep (Ig (Num n1) e2, s) = let (en, _) = aSmallStep (e2,s)
                                  in (Ig (Num n1) en, s)
 bSmallStep (Ig e1 e2, s) = let (en,_) = aSmallStep (e1,s)
                                  in (Ig en e2, s)
-                                    
+
+-- MIG - Menor ou igual
+-- bSmallStep (Ig e1 e2,s )  =
+bSmallStep (MIg (Num n1) (Num n2), s)
+  | ( n1 <= n2 ) = (TRUE, s)
+  | otherwise    = (FALSE, s)
+
+bSmallStep (MIg (Num n1) e2, s) = let (en, _) = aSmallStep (e2,s)
+                                 in (MIg (Num n1) en, s)
+bSmallStep (MIg e1 e2, s) = let (en,_) = aSmallStep (e1,s)
+                                 in (MIg en e2, s)
+
+
+-- OR
 --bSmallStep (Or b1 b2,s )  =
 bSmallStep (Or TRUE b2,s)  = (TRUE,s)
 bSmallStep (Or FALSE b2,s) = (b2,s)
@@ -93,26 +109,36 @@ isFinalB x = False
 
 cSmallStep :: (CExp,Estado) -> (CExp,Estado)
 
+-- IF
 -- cSmallStep (If c1 c2, s) =
 cSmallStep (If TRUE c1 c2, s) = cSmallStep (c1, s)
 cSmallStep (If FALSE c1 c2, s) = cSmallStep (c2, s)
 cSmallStep (If b c1 c2,s) = let (bn, _) = bSmallStep (b, s)
                             in (If bn c1 c2, s)
-
+-- SEQ
 -- cSmallStep (Seq c1 c2, s) =
 cSmallStep (Seq Skip c2, s) = cSmallStep (c2, s)
 cSmallStep (Seq c1 c2,s)  = let (cn, sn) = cSmallStep (c1, s)
                             in (Seq cn c2, sn)
 
+-- ATRIB
 --cSmallStep (Atrib (Var x) e,s) =
 cSmallStep (Atrib (Var x) (Num n), s) = (Skip, mudaVar s x n)
 
 cSmallStep (Atrib (Var x) e, s) = let (en, _) = aSmallStep (e, s)
                                   in (Atrib (Var x) en, s)
 
+-- WHILE
 -- cSmallStep (While b c, s)
 cSmallStep (While b c, s) = (If b (Seq c (While b c)) Skip, s)
 
+-- REPEAT UNTIL
+-- cSmallStep (Repeat c b, s)
+cSmallStep (Repeat c b, s) = (Seq c (If b Skip (Repeat c b)), s)
+
+-- FOR
+-- cSmallStep (For x e1 e2 c, s)
+cSmallStep (For x e1 e2 c, s) = (Seq (Atrib x e1) ( If (MIg e1 e2) (Seq c (For x (Som e1 (Num 1)) e2 c) ) Skip ), s)
 
 -- DUPLA ATRIBUICAO
 -- cSmallStep (Atrib2 (Var x1) (Var x2) e1 e2, s)
