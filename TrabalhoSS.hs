@@ -36,12 +36,14 @@ aSmallStep (Som (Num x) e2, s) = let (ef,_) = aSmallStep (e2 ,s)
                                  in (Som (Num x) ef,s)
 aSmallStep (Som e1 e2,s)  = let (ef,_) = aSmallStep (e1, s)
                             in (Som ef e2,s)
+-- SUB
 --aSmallStep (Sub e1 e2,s)  =
 aSmallStep (Sub (Num x) (Num y), s) = (Num (x+y), s)
 aSmallStep (Sub (Num x) e2, s) = let (ef,_) = aSmallStep (e2, s)
                                  in (Sub (Num x) ef,s)
 aSmallStep (Sub e1 e2,s)  = let (ef,_) = aSmallStep(e1, s)
                             in (Sub ef e2, s)
+-- MUL
 --aSmallStep (Mul e1 e2,s)  = 
 aSmallStep (Mul (Num x) (Num y), s) = (Num (x*y), s)
 aSmallStep (Mul (Num x) e2, s) = let (ef,_) = aSmallStep (e2, s)
@@ -111,13 +113,13 @@ cSmallStep :: (CExp,Estado) -> (CExp,Estado)
 
 -- IF
 -- cSmallStep (If c1 c2, s) =
-cSmallStep (If TRUE c1 c2, s) = cSmallStep (c1, s)
-cSmallStep (If FALSE c1 c2, s) = cSmallStep (c2, s)
+cSmallStep (If TRUE c1 c2, s) = (c1, s)
+cSmallStep (If FALSE c1 c2, s) = (c2, s)
 cSmallStep (If b c1 c2,s) = let (bn, _) = bSmallStep (b, s)
                             in (If bn c1 c2, s)
 -- SEQ
 -- cSmallStep (Seq c1 c2, s) =
-cSmallStep (Seq Skip c2, s) = cSmallStep (c2, s)
+cSmallStep (Seq Skip c2, s) = (c2, s)
 cSmallStep (Seq c1 c2,s)  = let (cn, sn) = cSmallStep (c1, s)
                             in (Seq cn c2, sn)
 
@@ -140,7 +142,7 @@ cSmallStep (Repeat c b, s) = (Seq c (If b Skip (Repeat c b)), s)
 -- cSmallStep (For x e1 e2 c, s)
 cSmallStep (For (Var x) e1 e2 c, s) = (Seq (Atrib (Var x) e1) ( If (MIg e1 e2) (Seq c (For (Var x) (Som e1 (Num 1)) e2 c) ) Skip ), s)
 
--- DUPLA ATRIBUICAO
+-- ATRIB2 (dupla atribuicao)
 -- cSmallStep (Atrib2 (Var x1) (Var x2) e1 e2, s)
 cSmallStep (Atrib2 (Var x1) (Var x2) e1 e2, s) = (Seq (Atrib (Var x1) e1) (Atrib (Var x2) e2), s)
 
@@ -173,12 +175,16 @@ exemplo2 = And (And TRUE (Not FALSE)) (And (Not (Not TRUE)) TRUE)
 -- *Main> interpretB (exemplo2,meuEstado)
 -- (TRUE,[("x",3),("y",0),("z",0)])
 
--- EXEMPLOS ADICIONADOS
+---------------------------------- EXEMPLOS ADICIONADOS ----------------------------
+
+-- EXEMPLO IF, MUL e ATRIB
 exemplo3 :: CExp
-exemplo3 = If ( Ig (Som (Num 1) (Num 2)) (Num 3) )  ( Atrib (Var "x") (Num 4) ) Skip
+exemplo3 = If ( Ig (Mul (Num 2) (Num 2)) (Num 4) )  ( Atrib (Var "x") (Num 4) ) Skip
 
+-- EXEMPLO WHILE, DUPLA ATRIBUICAO
 exemplo4 :: CExp
-exemplo4 = While  (Ig (Var "x") (Num 3))  (Atrib (Var "x") (Num 1))
+exemplo4 = While  (MIg (Var "y") (Num 3))  ( Atrib2 (Var "x") (Var "y") (Var "y") (Som (Var "y") (Num 1)) )
 
+-- EXEMPLO FOR
 exemplo5 :: CExp
 exemplo5 = For (Var "x") (Num 0) (Num 10) (Atrib (Var "y") (Som (Var "y") (Num 1) ) ) 
