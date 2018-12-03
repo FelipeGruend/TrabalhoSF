@@ -38,7 +38,7 @@ aSmallStep (Som e1 e2,s)  = let (ef,_) = aSmallStep (e1, s)
                             in (Som ef e2,s)
 -- SUB
 --aSmallStep (Sub e1 e2,s)  =
-aSmallStep (Sub (Num x) (Num y), s) = (Num (x+y), s)
+aSmallStep (Sub (Num x) (Num y), s) = (Num (x-y), s)
 aSmallStep (Sub (Num x) e2, s) = let (ef,_) = aSmallStep (e2, s)
                                  in (Sub (Num x) ef,s)
 aSmallStep (Sub e1 e2,s)  = let (ef,_) = aSmallStep(e1, s)
@@ -177,14 +177,24 @@ exemplo2 = And (And TRUE (Not FALSE)) (And (Not (Not TRUE)) TRUE)
 
 ---------------------------------- EXEMPLOS ADICIONADOS ----------------------------
 
--- EXEMPLO IF, MUL e ATRIB
+-- EXEMPLO IF, MUL, ATRIB, IG
 exemplo3 :: CExp
 exemplo3 = If ( Ig (Mul (Num 2) (Num 2)) (Num 4) )  ( Atrib (Var "x") (Num 4) ) Skip
 
--- EXEMPLO WHILE, DUPLA ATRIBUICAO
+
+-- EXEMPLO WHILE, DUPLA ATRIBUICAO, SUB
 exemplo4 :: CExp
-exemplo4 = While  (MIg (Var "y") (Num 3))  ( Atrib2 (Var "x") (Var "y") (Var "y") (Som (Var "y") (Num 1)) )
+exemplo4 = While  ( MIg (Var "y") (Num 3))
+                      ( Atrib2 (Var "x") (Var "y")
+                        (Sub (Var "x") (Var "y"))
+                        (Som (Var "y") (Num 1))
+                      )
 
 -- EXEMPLO FOR
 exemplo5 :: CExp
 exemplo5 = For (Var "x") (Num 0) (Num 10) (Atrib (Var "y") (Som (Var "y") (Num 1) ) ) 
+
+
+-- EXEMPLO REPEAT UNTIL
+exemplo6 :: CExp
+exemplo6 = Repeat ( Atrib (Var "z") (Som (Var "z") (Num 1))) (Ig (Var "z") (Num 10))  
